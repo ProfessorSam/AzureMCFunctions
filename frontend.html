@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nice Little MC Server</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            color: #333;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #444;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        .button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            color: #fff;
+            background: #4CAF50;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.3s ease;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .button:hover:not(:disabled) {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+        .status {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #666;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Nice Little MC Server</h1>
+    <button id="startButton" class="button" disabled>Checking status...</button>
+    <div id="status" class="status"></div>
+
+    <script>
+        const API_DOMAIN = 'https://api.yourdomain.com';
+
+        async function checkServerStatus() {
+            try {
+                const response = await fetch(`${API_DOMAIN}/api/statusVM`);
+                const data = await response.json();
+                return data.isOn === "true";
+            } catch (error) {
+                console.error('Failed to fetch server status', error);
+                return null;
+            }
+        }
+
+        async function startServer() {
+            const isOn = await checkServerStatus();
+            if (isOn === false) {
+                if (confirm("The server is offline. Do you want to start it?")) {
+                    try {
+                        await fetch(`${API_DOMAIN}/api/startVM`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: "start"
+                        });
+                        location.reload();
+                    } catch (error) {
+                        alert('Failed to start the server.');
+                    }
+                }
+            } else {
+                alert('The server is already online or the status is unknown.');
+            }
+        }
+
+        async function updateStatus() {
+            const isOn = await checkServerStatus();
+            const button = document.getElementById('startButton');
+            const statusDiv = document.getElementById('status');
+
+            if (isOn === null) {
+                button.disabled = true;
+                button.textContent = 'Server status unknown';
+                statusDiv.textContent = 'Unable to fetch server status.';
+            } else if (isOn) {
+                button.disabled = true;
+                button.textContent = 'Server is online';
+                statusDiv.textContent = 'The Minecraft server is currently running.';
+            } else {
+                button.disabled = false;
+                button.textContent = 'Start Server';
+                statusDiv.textContent = 'The Minecraft server is currently offline.';
+            }
+        }
+
+        function handleVisibilityChange() {
+            if (document.visibilityState === 'visible') {
+                updateStatus();
+            }
+        }
+
+        document.getElementById('startButton').addEventListener('click', startServer);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        updateStatus();
+    </script>
+
+</body>
+</html>
+
